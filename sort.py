@@ -37,7 +37,7 @@ class SortWin:
             col_size = col * self.size[1] // self.col_count
             rect = pygame.Rect(
                 (x, self.pos[1] + self.size[1] - col_size),
-                (self.size[0] / self.col_count, col_size)
+                (self.size[0] / self.col_count + 1, col_size)
             )
             pygame.draw.rect(
                 self.screen,
@@ -192,8 +192,9 @@ class QuickSort(Sort):
        
     
 if __name__ == "__main__":
-    sort = QuickSort(100, 300)
-
+    sort = QuickSort(10, 40)
+    #sort = BubbleSort(10, 40)
+    
     sort.show()
     
 
