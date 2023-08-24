@@ -1,5 +1,4 @@
 import pygame
-from random import shuffle
 
 
 WIDTH, HEIGHT = (1200, 600) # ui window size in px
@@ -19,10 +18,8 @@ class SortWin:
         # columns
         self.curr = -1
         self.col_count = col_count
-        self.columns = list(range(1, col_count + 1))
-        shuffle(self.columns)
-        
-
+        self.columns = []
+    
     def update(self, columns):
         self.columns = columns
 
