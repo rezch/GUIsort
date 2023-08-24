@@ -53,9 +53,8 @@ class Window:
         self.tick = tick
         self.columns = columns
         self.running = False
-        self.tick = tick
         self.screen = None
-        self.clock = None
+        self.__clock = None
         self.sort_win = None
 
     def run(self):
@@ -71,13 +70,13 @@ class Window:
         pygame.init()
         pygame.display.set_caption("GUIsort")
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
-        self.clock = pygame.time.Clock()
+        self.__clock = pygame.time.Clock()
 
     def quit(self):
         self.running = False
         pygame.quit()
     
-    def event_update(self):
+    def __event_update(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.quit()
@@ -95,6 +94,6 @@ class Window:
         pygame.display.update()
         
         # clock and event update
-        self.clock.tick(self.tick)
-        self.event_update()
+        self.__clock.tick(self.tick)
+        self.__event_update()
 

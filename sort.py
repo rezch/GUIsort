@@ -156,13 +156,10 @@ class HeapSort(Sort):
         while self.win.running:
             self.win.update()
 
-    
+
 if __name__ == "__main__":
-    csort = CocktailSort(100, 40)
-    bsort = BubbleSort(100, 40)
-    qsort = QuickSort(100, 40)
-    hsort = HeapSort(100, 40)
+    sort = QuickSort(1000, 1000)
     
-    hsort.show()
+    sort.show()
     
 
