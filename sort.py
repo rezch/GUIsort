@@ -1,103 +1,5 @@
 #from pkg_resources import cleanup_resources
-import pygame
-from random import shuffle
-
-
-WIDTH, HEIGHT = (1200, 600) # ui window size in px
-
-
-class SortWin:
-    SCREEN_COLOR = (128, 128, 128)
-    COL_COLOR = (0, 0, 0)
-    CURR_COL_COLOR = (200, 0, 0)
-    
-    def __init__(self, screen, col_count, pos, size):
-        self.screen = screen
-        self.pos = pos
-        self.size = size
-        self.rect = pygame.Rect(pos, size)
-
-        # columns
-        self.curr = -1
-        self.col_count = col_count
-        self.columns = list(range(1, col_count + 1))
-        shuffle(self.columns)
-        
-
-    def update(self, columns):
-        self.columns = columns
-
-    def draw(self):
-        pygame.draw.rect(self.screen, SortWin.SCREEN_COLOR, self.rect)
-
-        for i, col in enumerate(self.columns):
-            x = self.pos[0] + self.size[0] * i / self.col_count
-            color = SortWin.COL_COLOR if i != self.curr else SortWin.CURR_COL_COLOR
-
-            col_size = col * self.size[1] // self.col_count
-            rect = pygame.Rect(
-                (x, self.pos[1] + self.size[1] - col_size),
-                (self.size[0] / self.col_count + 1, col_size)
-            )
-            pygame.draw.rect(
-                self.screen,
-                color, # color
-                rect
-            )
-                
-
-
-class Window:
-    SCREEN_COLOR = (72, 72, 72)
-    
-    def __init__(self, columns=100, tick=1):
-        self.tick = tick
-        self.columns = columns
-        self.running = False
-        self.tick = tick
-        self.screen = None
-        self.clock = None
-        self.sort_win = None
-
-    def run(self):
-        self.running = True
-        self.__window_init()
-        self.sort_win = SortWin(
-            self.screen, self.columns,
-            (WIDTH // 8, HEIGHT // 8), # pos
-            (6 * (WIDTH // 8), 6 * (HEIGHT // 8)) # size
-        )
-
-    def __window_init(self):
-        pygame.init()
-        pygame.display.set_caption("---")
-        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
-        self.clock = pygame.time.Clock()
-
-    def quit(self):
-        self.running = False
-        pygame.quit()
-    
-    def event_update(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.quit()
-                
-            if event.type == pygame.KEYDOWN: # keys event
-                if event.key == pygame.K_q:
-                    self.quit()
-                
-    def update(self):
-        # ui draw
-        self.screen.fill(Window.SCREEN_COLOR)
-        self.sort_win.draw()
-
-        # display update
-        pygame.display.update()
-        
-        # clock and event update
-        self.clock.tick(self.tick)
-        self.event_update()
+from ui import Window
 
 
 class Sort:
@@ -133,7 +35,6 @@ class BubbleSort(Sort):
         while self.win.running:
             # sorting
             if n == 0:
-                self.win_update(columns, -1)
                 break
             if curr + 1 < n:
                 if columns[curr] > columns[curr + 1]:
@@ -145,6 +46,7 @@ class BubbleSort(Sort):
                 n -= 1
             self.win_update(columns, curr)
 
+        self.win_update(columns, -1)
         while self.win.running:
             self.win.update()
 
@@ -189,12 +91,78 @@ class QuickSort(Sort):
 
         while self.win.running:
             self.win.update()
-       
+
+
+class CocktailSort(Sort):
+    def __init__(self, tick=1000, columns_count=100):
+        Sort.__init__(self, tick, columns_count)
+
+    def up_sort(self, left, right, columns):
+        curr = left
+        while curr < right - 1:
+            if columns[curr] > columns[curr + 1]:
+                columns[curr], columns[curr + 1] = columns[curr + 1], columns[curr]
+            else:
+                curr += 1
+            self.win_update(columns, curr)
+
+    def down_sort(self, left, right, columns):
+        curr = right
+        while curr > left:
+            if columns[curr] < columns[curr - 1]:
+                 columns[curr], columns[curr - 1] = columns[curr - 1], columns[curr]
+            else:
+                curr -= 1
+            self.win_update(columns, curr)
+
+    def show(self):
+        self.win_init()
+
+        columns = self.win.sort_win.columns
+        n = len(columns)
+        
+        left, right = 0, n
+        while left < right:
+            self.up_sort(left, right, columns)
+            right -= 1
+            self.down_sort(left, right, columns)
+            left += 1
+        
+        self.win_update(self.win.sort_win.columns, -1)
+        while self.win.running:
+            self.win.update()
+
+
+class HeapSort(Sort):
+    def __init__(self, tick=1000, columns_count=100):
+        Sort.__init__(self, tick, columns_count)
+
+    def show(self):
+        self.win_init()
+
+        columns = self.win.sort_win.columns
+        n = len(columns)
+        
+        for i in range(n):
+            self.win_update(columns, i + 1)
+        
+        for i in range(n):
+            ind = columns.index(i + 1)
+            self.win_update(columns, ind)
+            columns[i], columns[ind] = columns[ind], columns[i]
+            self.win_update(columns, i)
+        
+        self.win_update(columns, -1)
+        while self.win.running:
+            self.win.update()
+
     
 if __name__ == "__main__":
-    sort = QuickSort(10, 40)
-    #sort = BubbleSort(10, 40)
+    csort = CocktailSort(100, 40)
+    bsort = BubbleSort(100, 40)
+    qsort = QuickSort(100, 40)
+    hsort = HeapSort(100, 40)
     
-    sort.show()
+    hsort.show()
     
 
