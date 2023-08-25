@@ -9,6 +9,7 @@ class Sort:
         self.tick = tick
         self.win = None
         self.operations_count = 0
+        self.swaps = 0
 
     def win_update(self, columns, curr):
         self.operations_count += 1
@@ -17,6 +18,7 @@ class Sort:
         self.win.running and self.win.update()
 
     def win_init(self):
+        self.swaps = 0
         self.operations_count = 0
         self.win = Window(self.columns_count, self.tick)
         self.win.run()
@@ -27,18 +29,22 @@ class Sort:
         return columns
 
     def show(self):
-        return 0, self.operations_count
+        return self.swaps, self.operations_count
+
+    def show_columns_update(self, old_columns, new_columns):
+        for ind, value in enumerate(new_columns):
+            temp = old_columns.index(value)
+            self.win_update(old_columns, temp)
+            self.win_update(old_columns, ind)
+            old_columns[ind], old_columns[temp] = old_columns[temp], old_columns[ind]
+            self.swaps += 1
 
 
 class BubbleSort(Sort):
-    def __init__(self, tick=1000, columns_count=100):
-        Sort.__init__(self, tick, columns_count)
-
     def show(self):
         self.win_init()
         columns = self.make_columns()
         n = self.columns_count
-        swaps = 0
         
         curr = 0
         while self.win.running:
@@ -47,7 +53,7 @@ class BubbleSort(Sort):
             if curr + 1 < n:
                 if columns[curr] > columns[curr + 1]:
                     columns[curr], columns[curr + 1] = columns[curr + 1], columns[curr]
-                    swaps += 1
+                    self.swaps += 1
                 else:
                     curr += 1
             else:
@@ -59,14 +65,10 @@ class BubbleSort(Sort):
         while self.win.running:
             self.win.update()
             
-        return swaps, self.operations_count
+        return self.swaps, self.operations_count
 
 
 class QuickSort(Sort):
-    def __init__(self, tick=1000, columns_count=100):
-        Sort.__init__(self, tick, columns_count)
-        self.swaps = 0
-
     def subarray_sort(self, columns, left, right):
         
         pivot = columns[(right + left) // 2]
@@ -110,10 +112,6 @@ class QuickSort(Sort):
 
 
 class CocktailSort(Sort):
-    def __init__(self, tick=1000, columns_count=100):
-        Sort.__init__(self, tick, columns_count)
-        self.swaps = 0
-
     def up_sort(self, left, right, columns):
         curr = left
         while curr < right - 1:
@@ -154,35 +152,23 @@ class CocktailSort(Sort):
 
 
 class HeapSort(Sort):
-    def __init__(self, tick=1000, columns_count=100):
-        Sort.__init__(self, tick, columns_count)
-
     def show(self):
         self.win_init()
         columns = self.make_columns()
-        swaps = 0
         
         for i in range(self.columns_count):
             self.win_update(columns, i + 1)
         
-        for i in range(self.columns_count):
-            ind = columns.index(i + 1)
-            self.win_update(columns, ind)
-            columns[i], columns[ind] = columns[ind], columns[i]
-            swaps += 1
-            self.win_update(columns, i)
+        self.show_columns_update(columns, list(range(1, self.columns_count)))
         
         self.win_update(columns, -1)
         while self.win.running:
             self.win.update()
             
-        return swaps, self.operations_count
+        return self.swaps, self.operations_count
 
 
 class InsertionSort(Sort):
-    def __init__(self, tick=1000, columns_count=100):
-        Sort.__init__(self, tick, columns_count)
-
     def show(self):
         self.win_init()
         ccolumns = self.make_columns()
@@ -205,13 +191,9 @@ class InsertionSort(Sort):
 
 
 class GnomeSort(Sort):
-    def __init__(self, tick=1000, column_count=100):
-        Sort.__init__(self, tick, column_count)
-
     def show(self):
         self.win_init()
         columns = self.make_columns()
-        swaps = 0
 
         curr = 0
         while curr < self.columns_count:
@@ -220,20 +202,17 @@ class GnomeSort(Sort):
             else:
                 columns[curr], columns[curr - 1] = columns[curr - 1], columns[curr]
                 curr -= 1
-                swaps += 1
+                self.swaps += 1
             self.win_update(columns, curr)
 
         self.win_update(columns, -1)
         while self.win.running:
             self.win.update()
 
-        return swaps, self.operations_count
+        return self.swaps, self.operations_count
 
 
 class RadixLSDSort(Sort):
-    def __init__(self, tick=1000, column_count=100):
-        Sort.__init__(self, tick, column_count)
-
     @staticmethod
     def get_max_digit_count(array):
         return len(str(max(array)))
@@ -263,25 +242,19 @@ class RadixLSDSort(Sort):
             for j in range(10):
                 array += count_array[j]
 
-            for ind, value in enumerate(array):
-                temp = columns.index(int(value))
-                self.win_update(columns, temp)
-                self.win_update(columns, ind)
-                columns[ind], columns[temp] = columns[temp], columns[ind]
-                swaps += 1
+            self.show_columns_update(columns, list(map(int, array)))
 
         self.win_update(columns, -1)
         while self.win.running:
             self.win.update()
             
-        return swaps, self.operations_count
+        return self.swaps, self.operations_count
 
 
 class RadixMSDBinSort(Sort):
     def __init__(self, tick=1000, column_count=100):
         Sort.__init__(self, tick, column_count)
         self.temp_columns = []
-        self.swaps = 0
 
     @staticmethod
     def get_max_digit_count(array):
@@ -307,13 +280,8 @@ class RadixMSDBinSort(Sort):
         # recombine lists
         array = zeros + ones
 
-        # sorting vizualization
-        for ind, value in enumerate(array):
-            temp = self.temp_columns.index(value)
-            self.win_update(self.temp_columns, temp)
-            self.win_update(self.temp_columns, ind)
-            self.temp_columns[ind], self.temp_columns[temp] = self.temp_columns[temp], self.temp_columns[ind]
-            self.swaps += 1
+        # sorting visualization
+        self.show_columns_update(self.temp_columns, list(map(int, array)))
     
         return array
 
@@ -321,7 +289,6 @@ class RadixMSDBinSort(Sort):
         self.win_init()
         columns = self.make_columns()
         self.temp_columns = columns
-        self.swaps = 0
 
         n = RadixMSDBinSort.get_max_digit_count(columns)
         columns = self.__msd_sort(columns, n)
@@ -337,7 +304,6 @@ class RadixMSDSort(Sort):
     def __init__(self, tick=1000, column_count=100):
         Sort.__init__(self, tick, column_count)
         self.temp_columns = []
-        self.swaps = 0
 
     @staticmethod
     def get_max_digit_count(array):
@@ -370,12 +336,7 @@ class RadixMSDSort(Sort):
             array += digit_list[digit]
         
         # sorting vizualization
-        for ind, value in enumerate(array):
-            temp = self.temp_columns.index(value)
-            self.win_update(self.temp_columns, temp)
-            self.win_update(self.temp_columns, ind)
-            self.temp_columns[ind], self.temp_columns[temp] = self.temp_columns[temp], self.temp_columns[ind]
-            self.swaps += 1
+        self.show_columns_update(self.temp_columns, list(map(int, array)))
     
         return array
 
@@ -394,8 +355,100 @@ class RadixMSDSort(Sort):
             
         return self.swaps, self.operations_count
 
+
+class BeadHTLSort(Sort):
+    """
+    * Bead sort from lower to higher digit
+    """
+    def __init__(self, tick=1000, column_count=100):
+        Sort.__init__(self, tick, column_count)
+        self.counting_array = []
+
+    def array_to_columns(self):
+        return [sum(arr) for arr in self.counting_array]
+
+    def drop_column(self, pos):
+        counter = 0
+        for val in self.counting_array:
+            counter += val[pos]
+
+        for i in range(self.columns_count):
+            if i < counter:
+                self.counting_array[self.columns_count - i - 1][pos] = 1
+            else:
+                self.counting_array[self.columns_count - i - 1][pos] = 0
+
+    '''def __slow_drop_column(self, pos):
+        start_ind = self.columns_count - 1
+        while start_ind >= 0 and self.counting_array[start_ind][pos] == 1:
+            start_ind -= 1
+
+        if start_ind == -1:
+            return False
+
+        flag = False
+        for i in range(start_ind, -1, -1):
+            if self.counting_array[i][pos] == 1:
+                self.counting_array[i][pos] = 0
+                self.counting_array[i + 1][pos] = 1
+                flag = True
+                break
+            
+        return flag'''
+
+    def show(self):
+        self.win_init()
+        columns = self.make_columns()
+
+        n = max(columns)
+        self.counting_array = []
+        for i, val in enumerate(columns):
+            self.counting_array.append([0] * (self.columns_count - val) + [1] * val)
+            self.win_update(columns, i)
+
+        for pos in range(self.columns_count):
+            self.drop_column(pos)
+            new_columns = self.array_to_columns()
+            columns = new_columns
+            self.win_update(columns, -1)
+            
+        self.win_update(columns, -1)
+        while self.win.running:
+            self.win.update()
+
+        return self.swaps, self.operations_count
+
+
+class BeadLTHSort(BeadHTLSort):
+    """
+    * Bead sort from higher to lower digit
+    """
+    def show(self):
+        self.win_init()
+        columns = self.make_columns()
+        swaps = 0
+
+        n = max(columns)
+        self.counting_array = []
+        for i, val in enumerate(columns):
+            self.counting_array.append([0] * (self.columns_count - val) + [1] * val)
+            self.win_update(columns, i)
+
+        for pos in range(self.columns_count - 1, -1, -1):
+            self.drop_column(pos)
+            new_columns = self.array_to_columns()
+            columns = new_columns
+            self.win_update(columns, -1)
+            
+        self.win_update(columns, -1)
+        while self.win.running:
+            self.win.update()
+
+        return self.swaps, self.operations_count
+
+
 if __name__ == "__main__":
-    sort = RadixLSDSort(1000, 300)
+    sort = BeadLTHSort(10, 50)
     
     swaps, operations = sort.show()
     
