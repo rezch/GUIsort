@@ -53,9 +53,11 @@ class Window:
         self.screen = None
         self.__clock = None
         self.sort_win = None
+        self.paused = False
 
     def run(self):
         self.running = True
+        self.paused = False
         self.__window_init()
         self.sort_win = SortWin(
             self.screen, self.columns,
@@ -81,16 +83,28 @@ class Window:
             if event.type == pygame.KEYDOWN: # keys event
                 if event.key == pygame.K_q:
                     self.quit()
-                
+
+                if event.key == pygame.K_SPACE:
+                    self.paused = not self.paused
+
+    def make_tick(self):
+        self.__clock.tick(self.tick)
+        self.__event_update()
+
     def update(self):
+        # pause
+        while self.paused:
+            self.make_tick()
+            if not self.running:
+                return
+        
         # ui draw
         self.screen.fill(Window.SCREEN_COLOR)
         self.sort_win.draw()
-
+        
         # display update
         pygame.display.update()
         
         # clock and event update
-        self.__clock.tick(self.tick)
-        self.__event_update()
+        self.make_tick()
 

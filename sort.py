@@ -1,4 +1,3 @@
-#from pkg_resources import cleanup_resources
 from ui import Window
 from random import shuffle
 
@@ -42,7 +41,8 @@ class Sort:
             self.swaps += 1
 
     def action_await(self, columns):
-        self.win_update(columns, -1)
+        if not self.win.paused:
+            self.win_update(columns, -1)
         while self.win.running:
             self.win.update()
 
