@@ -89,10 +89,13 @@ class Window:
                 if event.key == pygame.K_SPACE:
                     self.paused = not self.paused
 
-                if event.key == pygame.K_RIGHT and self.paused:
+                if event.key == pygame.K_RIGHT:
                     self.__make_step = True
 
     def make_tick(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_RIGHT]:
+            self.__make_step = True
         self.__clock.tick(self.tick)
         self.__event_update()
 
