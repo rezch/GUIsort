@@ -394,8 +394,8 @@ class RadixMSDSort(Sort):
             
         return self.swaps, self.operations_count
 
-if __name__ == "__main__":    
-    sort = RadixMSDBinSort(300, 999)
+if __name__ == "__main__":
+    sort = RadixLSDSort(1000, 300)
     
     swaps, operations = sort.show()
     

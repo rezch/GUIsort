@@ -1,7 +1,7 @@
 import pygame
 
 
-WIDTH, HEIGHT = (1200, 600) # ui window size in px
+WIDTH, HEIGHT = (1200, 700) # ui window size in px
 
 
 class SortWin:
@@ -44,7 +44,7 @@ class SortWin:
 
 
 class Window:
-    SCREEN_COLOR = (72, 72, 72)
+    SCREEN_COLOR = (128, 128, 128)
     
     def __init__(self, columns=100, tick=1):
         self.tick = tick
@@ -59,8 +59,8 @@ class Window:
         self.__window_init()
         self.sort_win = SortWin(
             self.screen, self.columns,
-            (WIDTH // 8, HEIGHT // 8), # pos
-            (6 * (WIDTH // 8), 6 * (HEIGHT // 8)) # size
+            (0, 0), # pos
+            (WIDTH, HEIGHT) # size
         )
 
     def __window_init(self):
