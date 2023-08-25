@@ -458,7 +458,7 @@ class BucketSort(Sort):
 
 
 if __name__ == "__main__":
-    sort = BucketSort(1000, 1000)
+    sort = QuickSort(100, 1000)
     
     swaps, operations = sort.show()
     
