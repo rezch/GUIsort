@@ -41,8 +41,7 @@ class Sort:
             self.swaps += 1
 
     def action_await(self, columns):
-        if not self.win.paused:
-            self.win_update(columns, -1)
+        self.win_update(columns, -1)
         while self.win.running:
             self.win.update()
 
@@ -451,14 +450,14 @@ class BucketSort(Sort):
         columns = self.make_columns()
 
         self.make_bucket(columns, 1, self.columns_count, 0, self.columns_count)
-
+        
         self.action_await(columns)
         
         return self.swaps, self.operations_count
 
 
 if __name__ == "__main__":
-    sort = QuickSort(100, 1000)
+    sort = BucketSort(tick=300, columns=1000)
     
     swaps, operations = sort.show()
     

@@ -89,7 +89,7 @@ class Window:
                 if event.key == pygame.K_SPACE:
                     self.paused = not self.paused
 
-                if event.key == pygame.K_RIGHT:
+                if event.key == pygame.K_RIGHT or event.key == pygame.K_UP:
                     self.__make_step = True
 
     def make_tick(self):
@@ -108,14 +108,14 @@ class Window:
         pygame.display.update()
 
     def update(self):
-        # pause
-        while self.paused and not self.__make_step:
-            self.make_tick()
-            if not self.running:
-                return
-        
+        # display and event update
         self.display_tick()
-        # clock and event update
         self.make_tick()
+
+        # pause
+        while self.paused and self.running and not self.__make_step:
+            self.make_tick()
+        
         self.__make_step = False
+
 
