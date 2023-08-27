@@ -12,7 +12,7 @@ class Sort:
 
     def win_update(self, columns, curr):
         self.operations_count += 1
-        self.win.sort_win.curr = curr
+        self.win.sort_win.current = curr
         self.win.sort_win.update(columns)
         self.win.running and self.win.update()
 
@@ -36,8 +36,8 @@ class Sort:
                 continue
             temp = old_columns.index(value)
             self.win_update(old_columns, temp)
-            self.win_update(old_columns, ind)
             old_columns[ind], old_columns[temp] = old_columns[temp], old_columns[ind]
+            self.win_update(old_columns, ind)
             self.swaps += 1
 
     def action_await(self, columns):
@@ -168,7 +168,7 @@ class HeapSort(Sort):
 class InsertionSort(Sort):
     def show(self):
         self.win_init()
-        ccolumns = self.make_columns()
+        columns = self.make_columns()
         
         pivot = 1
         while pivot < self.columns_count:
@@ -178,7 +178,6 @@ class InsertionSort(Sort):
             pivot += 1
             columns[:pivot] = sorted(columns[:pivot])
             self.win_update(columns, columns.index(temp))
-            
         
         self.action_await(columns)
             
@@ -243,8 +242,8 @@ class RadixLSDSort(Sort):
 
 
 class RadixMSDBinSort(Sort):
-    def __init__(self, tick=1000, column_count=100):
-        Sort.__init__(self, tick, column_count)
+    def __init__(self, tick=1000, columns_count=100):
+        Sort.__init__(self, tick, columns_count)
         self.temp_columns = []
 
     @staticmethod
@@ -290,8 +289,8 @@ class RadixMSDBinSort(Sort):
 
 
 class RadixMSDSort(Sort):
-    def __init__(self, tick=1000, column_count=100):
-        Sort.__init__(self, tick, column_count)
+    def __init__(self, tick=1000, columns_count=100):
+        Sort.__init__(self, tick, columns_count)
         self.temp_columns = []
 
     @staticmethod
@@ -347,8 +346,8 @@ class BeadHTLSort(Sort):
     """
     * Bead sort from lower to higher digit
     """
-    def __init__(self, tick=1000, column_count=100):
-        Sort.__init__(self, tick, column_count)
+    def __init__(self, tick=1000, columns_count=100):
+        Sort.__init__(self, tick, columns_count)
         self.counting_array = []
 
     def array_to_columns(self):
@@ -457,7 +456,7 @@ class BucketSort(Sort):
 
 
 if __name__ == "__main__":
-    sort = BucketSort(tick=300, columns=1000)
+    sort = BucketSort(tick=100, columns_count=10)
     
     swaps, operations = sort.show()
     

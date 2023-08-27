@@ -12,7 +12,7 @@ class Columns:
     def __init__(self, count, window):
         self.count = count # count of columns
         self.array = list(range(1, count + 1)) # array of columns values
-        #shuffle(self.array) # shuffling columns array
+        shuffle(self.array) # shuffling columns array
         self.window = window # pygame window (class Window)
 
     def __getitem__(self, index):
@@ -22,14 +22,6 @@ class Columns:
     def __setitem__(self, index, value):
         ''' change value in self array by index '''
         self.array[index] = value
-
-    def swap(self, index1, index2):
-        ''' swaps elements in self.array with indexes index1 and index2 and updater self window '''
-
-        # updates window only if window is running
-        self.window.running and self.window.display_tick(index1)
-        self.array[index1], self.array[index2] = self.array[index2], self.array[index1]
-        self.window.running and self.window.display_tick(index2)
 
 
 class Window:
@@ -83,11 +75,14 @@ class Window:
 
                 if event.key == pygame.K_SPACE:
                     self.paused = not self.paused # pause
+                
+                if event.key == pygame.K_RETURN:
+                    self.paused = False # play
 
                 if event.key == pygame.K_RIGHT or event.key == pygame.K_UP:
                     self.__make_step = True  # step
 
-    def draw(self, current_column_index=-1):
+    def draw(self, current_column_index):
         ''' columns draw '''
         for i, column in enumerate(self.columns):
             # column parameters
@@ -122,10 +117,10 @@ class Window:
         # display update
         pygame.display.update()
 
-    def update(self):
+    def update(self, current_column_index=-1):
         ''' window update method '''
         # display and event update
-        self.display_tick()
+        self.display_tick(current_column_index)
         self.make_tick()
 
         # pause proccesing
@@ -136,12 +131,20 @@ class Window:
         ''' window run '''
         # status variables setting
         self.running = True
-        self.paused = False
+        self.paused = True
         self.__make_step = False
 
         # window initialization
         self.__window_init()
         self.display_tick()
+
+    def swap(self, index1, index2):
+        ''' swaps elements in columns array with indexes index1 and index2 and updater self window '''
+
+        # updates window only if window is running
+        self.running and abs(index1 - index2) > 1 and self.update(index1) # marks a column only if it is not adjacent to another
+        self.columns.array[index1], self.columns.array[index2] = self.columns.array[index2], self.columns.array[index1]
+        self.running and self.update(index2)
 
 
 class Sort:
@@ -153,15 +156,17 @@ class Sort:
         self.window = Window(columns_count, tick)
         self.swaps_count = 0 # amount of array swaps
 
-    def window_init(self):
-        ''' self window run '''
-        self.swaps_count = 0 # reset swaps counter
-        self.window.run()
-
     def action_await(self):
         ''' running self window until the user closed it '''
         while self.window.running:
             self.window.update()
+
+    def window_init(self):
+        ''' self window run '''
+        self.swaps_count = 0 # reset swaps counter
+        self.window.run()
+        while self.window.paused and self.window.running:
+            self.window.update() # waits for user to start the animation
 
     def show(self):
         ''' *sorting algorithm code here* (also self.swaps should be updated after interacting with the array) '''
@@ -175,8 +180,14 @@ class GnomeSort(Sort):
         ''' rewrited method Sort.show() to gnome sort '''
         self.window_init()
 
-        self.window.columns.swap(2, 3)
-        self.window.columns.swap(4, 3)
+        current = 0
+        while current < self.window.columns.count:
+            if current == 0 or self.window.columns[current] > self.window.columns[current - 1]:
+                current += 1
+            else:
+                self.window.swap(current, current - 1)
+                current -= 1
+                self.swaps_count += 1
 
         self.action_await()
 
@@ -184,7 +195,7 @@ class GnomeSort(Sort):
     
 
 if __name__ == "__main__":
-    sort = GnomeSort(5, 10)
+    sort = GnomeSort(1000, 100)
 
     sort.show()
 
