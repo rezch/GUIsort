@@ -1,7 +1,14 @@
 import pygame
 from random import shuffle
+from time import time
+
 
 WIDTH, HEIGHT = (1600, 900) # ui window size in px
+
+
+def get_time_ms():
+    ''' return current time after 1 jun 1970 00:00:00 in ms '''
+    return int(time() * 1000)
 
 
 class Columns:
@@ -51,6 +58,10 @@ class Window:
         self.columns_count = columns_count
         self.columns = Columns(columns_count, self)
 
+        # timer information
+        self.runtime = 0 # execution time (in ms)
+        self._timer_start = 0 # timer start time (in ms)
+
     def __window_init(self):
         ''' window initialization '''
         # pygame display initialization and setting
@@ -64,7 +75,15 @@ class Window:
     def quit(self):
         ''' window close method '''
         self.running = False
+        not self.paused and self.runtime_update()
         pygame.quit()
+
+    def runtime_update(self):
+        ''' update runtime '''
+        if self.paused:
+            self._timer_start = get_time_ms() # if window paused - reset timer start time
+        else:
+            self.runtime += get_time_ms() - self._timer_start # else - add time to runtime
     
     def __event_update(self):
         ''' window events processing '''
@@ -77,9 +96,11 @@ class Window:
                     self.quit() # quit
 
                 if event.key == pygame.K_SPACE:
+                    self.runtime_update()
                     self.paused = not self.paused # pause
                 
                 if event.key == pygame.K_RETURN:
+                    self.paused and self.runtime_update()
                     self.paused = False # play
 
                 if event.key == pygame.K_RIGHT or event.key == pygame.K_UP:
@@ -119,6 +140,9 @@ class Window:
         
         # display update
         pygame.display.update()
+
+    def timer_update(self):
+        self.runtime = 0 # execution time (in ms)
 
     def update(self, current_column_index=-1):
         ''' window update method '''

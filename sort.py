@@ -1,5 +1,6 @@
 from ui import Window
 
+
 class Sort:
     """ Base class of Sort classes 
     describes the basic methods of interaction with the class
@@ -21,17 +22,26 @@ class Sort:
         while self.window.paused and self.window.running:
             self.window.update() # waits for user to start the animation
 
-    def show(self):
-        ''' *sorting algorithm code here* (also self.swaps should be updated after interacting with the array) '''
-        return self.swaps_count # return amount of swaps performed during the operation of the algorithm
+    @staticmethod
+    def show(func):
+        ''' decorate function to Sort.show function '''
+        # self.swaps doesn't update automatically when interacting with an columns array
+        def _wrapper(*args, **kwargs):
+            args[0].window_init() # initializes the window
+            args[0].swaps_count = 0 # set swaps count to zero
+
+            func(*args, **kwargs) # sorting algorithm function here
+
+            args[0].action_await() # updates the window so that the user can close it
+        return _wrapper
 
 
 class GnomeSort(Sort):
     """ class of gnome sort algorithm """
 
+    @Sort.show
     def show(self):
         ''' rewrited method Sort.show() to gnome sort '''
-        self.window_init()
 
         current = 0
         while current < self.window.columns.count:
@@ -42,14 +52,85 @@ class GnomeSort(Sort):
                 current -= 1
                 self.swaps_count += 1
 
-        self.action_await()
 
-        return self.swaps_count
-    
+class BubbleSort(Sort):
+    """ class of bubble sort algorithm """
+
+    @Sort.show
+    def show(self):
+        
+        n = self.window.columns_count
+        current = 0
+        while  n > 0 and self.window.running:
+            if current + 1 < n:
+                if self.window.columns[current] > self.window.columns[current + 1]:
+                    self.window.swap(current, current + 1)
+                    self.swaps_count += 1
+                else:
+                    current += 1
+            else:
+                current = 0
+                n -= 1
+
+
+class CocktailSort(Sort):
+    """ class of cocktail shaker sort algorithm """
+
+    def up_sort(self, left, right):
+        ''' raising the biggest column to the top of an array of columns '''
+        current = left
+
+        while current < right - 1:
+            if self.window.columns[current] > self.window.columns[current + 1]:
+                self.window.swap(current, current + 1)
+                self.swaps_count += 1
+            else:
+                current += 1
+
+    def down_sort(self, left, right):
+        ''' descending the smallest column of the columns array down '''
+        current = right
+
+        while current > left:
+            if self.window.columns[current] < self.window.columns[current - 1]:
+                 self.window.swap(current, current - 1)
+                 self.swaps_count += 1
+            else:
+                current -= 1
+
+    @Sort.show
+    def show(self):
+        left, right = 0, self.window.columns_count
+
+        while left < right:
+            self.up_sort(left, right)
+            right -= 1
+            self.down_sort(left, right)
+            left += 1
+
+
+class InsertionSort(Sort):
+    """ class of insertion sort algorithm """
+
+    @Sort.show
+    def show(self):
+        pivot = 1
+        while pivot < self.window.columns_count:
+            temp = self.window.columns[pivot]
+            
+            current = pivot
+            while self.window.columns[current] < self.window.columns[current - 1] and current > 0:
+                self.window.swap(current, current - 1)
+                current -= 1
+                self.swaps_count += 1
+
+            pivot += 1
+            self.window.update()
+
 
 if __name__ == "__main__":
-    sort = GnomeSort(1000, 100)
+    sort = CocktailSort(1000, 100)
 
-    swaps = sort.show()
+    sort.show()
 
-    print(swaps)
+    print(f"swaps: {sort.swaps_count}, time: {sort.window.runtime}")
