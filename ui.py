@@ -1,12 +1,12 @@
 import pygame
-from random import shuffle
+from random import shuffle, seed
 from time import time
 
 
 WIDTH, HEIGHT = (1600, 900) # ui window size in px
 
 
-def get_time_ms():
+def get_time_ms() -> int:
     ''' return current time after 1 jun 1970 00:00:00 in ms '''
     return int(time() * 1000)
 
@@ -16,23 +16,24 @@ class Columns:
     the appeal is made in the same way as with the list
     when you replace a value in the list, the window is automatically updated
     """
-    def __init__(self, count, window):
+    def __init__(self, count: int, random_seed: int) -> None:
+        self.seed = random_seed
         self.count = count # count of columns
         self.array = list(range(1, count + 1)) # array of columns values
-        self.window = window # pygame window (class Window)
 
-    def shuffle(self):
+    def shuffle(self) -> None:
         ''' shuffling columns array '''
+        if self.seed is not None:
+            seed(self.seed)
         shuffle(self.array)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> int:
         ''' returns self array value by index '''
         return self.array[index]
 
-    def __setitem__(self, index, value):
+    def __setitem__(self, index: int, value: int) -> None:
         ''' change value in self array by index '''
         self.array[index] = value
-
 
 class Window:
     """ Window class
@@ -42,8 +43,8 @@ class Window:
     COLUMN_COLOR = (0, 0, 0)
     CURRENT_COLUMN_COLOR = (200, 0, 0)
     
-    def __init__(self, columns_count=100, tick=1):
-        self._tick = tick
+    def __init__(self, random_seed: int, columns_count:int=100, tick:int=1) -> None:
+        self.tick = tick
 
         # window status variables
         self.running = False
@@ -56,13 +57,14 @@ class Window:
 
         # columns
         self.columns_count = columns_count
-        self.columns = Columns(columns_count, self)
+        self.columns = Columns(count=columns_count, random_seed=random_seed)
 
-        # timer information
+        # sorting information
+        self.swaps_count = 0 # count of swaps in array
         self.runtime = 0 # execution time (in ms)
         self._timer_start = 0 # timer start time (in ms)
 
-    def __window_init(self):
+    def __window_init(self) -> None:
         ''' window initialization '''
         # pygame display initialization and setting
         pygame.init()
@@ -72,20 +74,20 @@ class Window:
         self.__screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.__clock = pygame.time.Clock()
 
-    def quit(self):
+    def quit(self) -> None:
         ''' window close method '''
         self.running = False
         not self.paused and self.runtime_update()
         pygame.quit()
 
-    def runtime_update(self):
+    def runtime_update(self) -> None:
         ''' update runtime '''
         if self.paused:
             self._timer_start = get_time_ms() # if window paused - reset timer start time
         else:
             self.runtime += get_time_ms() - self._timer_start # else - add time to runtime
     
-    def __event_update(self):
+    def __event_update(self) -> None:
         ''' window events processing '''
         for event in pygame.event.get():
             if event.type == pygame.QUIT: # window close button was pressed
@@ -106,7 +108,7 @@ class Window:
                 if event.key == pygame.K_RIGHT or event.key == pygame.K_UP:
                     self.__make_step = True  # step
 
-    def draw(self, current_column_index):
+    def draw(self, current_column_index: int) -> None:
         ''' columns draw '''
         for i, column in enumerate(self.columns):
             # column parameters
@@ -122,17 +124,17 @@ class Window:
             # drawing rectangle on display and updating it
             pygame.draw.rect(self.__screen, color, rect)
 
-    def make_tick(self):
+    def make_tick(self) -> None:
         ''' make one update tick '''
         # keyboard events update
         keys = pygame.key.get_pressed()
         self.__make_step = keys[pygame.K_RIGHT] # right arrow is pressed
         self.__event_update()
 
-    def display_tick(self, current_column_index=-1):
+    def display_tick(self, current_column_index:int=-1) -> None:
         ''' make one update tick '''
         # window tick limitation
-        self.__clock.tick(self._tick)
+        self.__clock.tick(self.tick)
 
         # ui draw
         self.__screen.fill(Window.SCREEN_COLOR)
@@ -141,12 +143,14 @@ class Window:
         # display update
         pygame.display.update()
 
-    def timer_update(self):
+    def timer_update(self) -> None:
         self.runtime = 0 # execution time (in ms)
 
-    def update(self, current_column_index=-1):
+    def update(self, current_column_index:int=-1) -> None:
         ''' window update method '''
         # display and event update
+        if self.running == False:
+            return
         self.display_tick(current_column_index)
         self.make_tick()
 
@@ -154,12 +158,13 @@ class Window:
         while self.paused and self.running and not self.__make_step:
             self.make_tick()
 
-    def run(self):
+    def run(self) -> None:
         ''' window run '''
         # status variables setting
         self.running = True
         self.paused = True
         self.__make_step = False
+        self.swaps_count = 0
 
         # columns shuffling
         self.columns.shuffle()
@@ -168,11 +173,16 @@ class Window:
         self.__window_init()
         self.display_tick()
 
-    def swap(self, index1, index2):
-        ''' swaps elements in columns array with indexes index1 and index2 and updater self window '''
+    def swap(self, index1: int, index2: int, update_window:bool=True) -> None:
+        ''' swaps elements in columns array with indexes index1 and index2 and update self window display if update_window is True'''
 
         # updates window only if window is running
-        self.running and abs(index1 - index2) > 1 and self.update(index1) # marks a column only if it is not adjacent to another
+        update_window and self.running and abs(index1 - index2) > 1 and self.update(index1) # marks a column only if it is not adjacent to another
         self.columns.array[index1], self.columns.array[index2] = self.columns.array[index2], self.columns.array[index1]
-        self.running and self.update(index2)
+        update_window and self.running and self.update(index2)
+        self.swaps_count += 1
 
+    def swap_by_value(self, value1: int, value2: int) -> None:
+        ''' swaps elements in columns array with value value1 and value2 and updater self window '''
+
+        self.swap(self.columns.array.index(value1), self.columns.array.index(value2))
