@@ -1,121 +1,173 @@
 import pygame
+from time import time
+from random import shuffle, seed
 
 
-WIDTH, HEIGHT = (1200, 700) # ui window size in px
+WIDTH, HEIGHT = (1600, 900) # ui window size in px
 
 
-class SortWin:
-    SCREEN_COLOR = (128, 128, 128)
-    COL_COLOR = (0, 0, 0)
-    CURR_COL_COLOR = (200, 0, 0)
-    
-    def __init__(self, screen, col_count, pos, size):
-        self.screen = screen
-        self.pos = pos
-        self.size = size
-        self.rect = pygame.Rect(pos, size)
+def get_time_ms() -> int:
+    ''' return current time after 1 jun 1970 00:00:00 in ms '''
+    return int(time() * 1000)
 
-        # columns
-        self.curr = -1
-        self.col_count = col_count
-        self.columns = []
-    
-    def update(self, columns):
-        self.columns = columns
 
-    def draw(self):
-        pygame.draw.rect(self.screen, SortWin.SCREEN_COLOR, self.rect)
+class Columns:
+    """ columns array class 
+    the appeal is made in the same way as with the list
+    when you replace a value in the list, the window is automatically updated
+    """
+    def __init__(self, count: int, random_seed: int) -> None:
+        self.seed = random_seed
+        self.count = count # count of columns
+        self.array = list(range(1, count + 1)) # array of columns values
 
-        for i, col in enumerate(self.columns):
-            x = self.pos[0] + self.size[0] * i / self.col_count
-            color = SortWin.COL_COLOR if i != self.curr else SortWin.CURR_COL_COLOR
+    def shuffle(self) -> None:
+        ''' shuffling columns array '''
+        if self.seed is not None:
+            seed(self.seed)
+        shuffle(self.array)
 
-            col_size = col * self.size[1] // self.col_count
-            rect = pygame.Rect(
-                (x, self.pos[1] + self.size[1] - col_size),
-                (self.size[0] / self.col_count + 1, col_size)
-            )
-            pygame.draw.rect(
-                self.screen,
-                color, # color
-                rect
-            )
-                
+    def __getitem__(self, index: int) -> int:
+        ''' returns self array value by index '''
+        return self.array[index]
+
+    def __setitem__(self, index: int, value: int) -> None:
+        ''' change value in self array by index '''
+        self.array[index] = value
 
 
 class Window:
+    """ Window class
+    interacts with the user and displays the sorting process
+    """
     SCREEN_COLOR = (128, 128, 128)
+    COLUMN_COLOR = (0, 0, 0)
+    CURRENT_COLUMN_COLOR = (200, 0, 0)
     
-    def __init__(self, columns=100, tick=1):
+    def __init__(self, tick:int=1) -> None:
         self.tick = tick
-        self.columns = columns
+
+        # window status variables
         self.running = False
-        self.screen = None
+        self.paused = False
+        self.__make_step = False # make one display update while window is paused
+
+        # pygame objects
+        self.__screen = None
         self.__clock = None
-        self.sort_win = None
-        self.paused = False
-        self.__make_step = False
 
-    def run(self):
-        self.running = True
-        self.paused = False
-        self.__make_step = False
-        self.__window_init()
-        self.sort_win = SortWin(
-            self.screen, self.columns,
-            (0, 0), # pos
-            (WIDTH, HEIGHT) # size
-        )
+        # sorting information
+        self.runtime = 0 # execution time (in ms)
+        self._timer_start = 0 # timer start time (in ms)
 
-    def __window_init(self):
+        self.sorting_is_done = True # true if the sorting is done completely
+        # (updated to False if the window was updated after it was closed)
+
+    def __window_init(self) -> None:
+        ''' window initialization '''
+        # pygame display initialization and setting
         pygame.init()
         pygame.display.set_caption("GUIsort")
-        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+
+        # setting self pygame variables
+        self.__screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.__clock = pygame.time.Clock()
 
-    def quit(self):
+    def quit(self) -> None:
+        ''' window close method '''
         self.running = False
+        not self.paused and self.runtime_update()
         pygame.quit()
+
+    def runtime_update(self) -> None:
+        ''' update runtime '''
+        if self.paused:
+            self._timer_start = get_time_ms() # if window paused - reset timer start time
+        else:
+            self.runtime += get_time_ms() - self._timer_start # else - add time to runtime
     
-    def __event_update(self):
+    def __event_update(self) -> None:
+        ''' window events processing '''
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.quit()
+            if event.type == pygame.QUIT: # window close button was pressed
+                self.quit() # quit
                 
             if event.type == pygame.KEYDOWN: # keys event
                 if event.key == pygame.K_q:
-                    self.quit()
+                    self.quit() # quit
 
                 if event.key == pygame.K_SPACE:
-                    self.paused = not self.paused
+                    self.runtime_update()
+                    self.paused = not self.paused # pause
+                
+                if event.key == pygame.K_RETURN:
+                    self.paused and self.runtime_update()
+                    self.paused = False # play
 
                 if event.key == pygame.K_RIGHT or event.key == pygame.K_UP:
-                    self.__make_step = True
+                    self.__make_step = True  # step
 
-    def make_tick(self):
+    def draw(self, columns: Columns, current_column_index: int) -> None:
+        ''' columns draw '''
+        if columns == []: # if draw was called with empty list parametr
+            return
+        
+        columns_count = len(columns.array)
+        for i, column in enumerate(columns):
+            # column parameters
+            color = Window.COLUMN_COLOR if i != current_column_index else Window.CURRENT_COLUMN_COLOR
+            column_height = column * HEIGHT // columns_count
+
+            # creating a column-sized rectangle
+            rect = pygame.Rect(
+                (WIDTH * i / columns_count, HEIGHT - column_height),
+                (WIDTH / columns_count + 1, column_height)
+            )
+
+            # drawing rectangle on display and updating it
+            pygame.draw.rect(self.__screen, color, rect)
+
+    def make_tick(self) -> None:
+        ''' make one update tick '''
+        # keyboard events update
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_RIGHT]:
-            self.__make_step = True
-        self.__clock.tick(self.tick)
+        self.__make_step = keys[pygame.K_RIGHT] # right arrow is pressed
         self.__event_update()
 
-    def display_tick(self):
+    def display_tick(self, columns_array, current_column_index:int=-1) -> None:
+        ''' make one update tick '''
+        # window tick limitation
+        self.__clock.tick(self.tick)
+
         # ui draw
-        self.screen.fill(Window.SCREEN_COLOR)
-        self.sort_win.draw()
+        self.__screen.fill(Window.SCREEN_COLOR)
+        self.draw(columns_array, current_column_index)
         
         # display update
         pygame.display.update()
 
-    def update(self):
+    def update(self, columns_array, current_column_index:int=-1) -> None:
+        ''' window update method '''
         # display and event update
-        self.display_tick()
+        if self.running == False:
+            self.sorting_is_done = False # updated to False because the window was updated after it was closed
+            return
+        
+        self.display_tick(columns_array, current_column_index)
         self.make_tick()
 
-        # pause
+        # pause proccesing
         while self.paused and self.running and not self.__make_step:
             self.make_tick()
-        
+
+    def run(self) -> None:
+        ''' window run '''
+        # status variables setting
+        self.running = True
+        self.paused = True
         self.__make_step = False
+        self.sorting_is_done = True
 
-
+        # window initialization
+        self.__window_init()
+        self.display_tick([])
