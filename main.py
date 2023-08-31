@@ -7,7 +7,7 @@ class GnomeSort(Sort):
     @Sort.show
     def show(self) -> None:
         current = 0
-        while current < self.columns.count:
+        while current < self.columns_count:
             if current == 0 or self.columns[current] > self.columns[current - 1]:
                 current += 1
             else:

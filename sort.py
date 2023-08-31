@@ -60,10 +60,14 @@ class Sort:
     def swap(self, index1: int, index2: int, update_window:bool=True) -> None:
         ''' swaps elements in columns array with indexes index1 and index2 and update self window display if update_window is True'''
         # updates window only if window is running
-        update_window and self.window.running and abs(index1 - index2) > 1 and self.window.update(self.columns, index1) # marks a column only if it is not adjacent to another
+        if update_window and self.window.running and abs(index1 - index2) > 1:
+            self.window.update(self.columns, index1) # marks a column only if it is not adjacent to another
+
         self.columns.array[index1], self.columns.array[index2] = self.columns.array[index2], self.columns.array[index1]
-        update_window and self.window.running and self.window.update(self.columns, index2)
         self.swaps_count += 1
+
+        if update_window and self.window.running:
+            self.window.update(self.columns, index2)
 
     def swap_by_value(self, value1: int, value2: int) -> None:
         ''' swaps elements in columns array with value value1 and value2 and updater self window '''
