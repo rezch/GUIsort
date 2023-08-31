@@ -1,6 +1,6 @@
 import pygame
-from random import shuffle, seed
 from time import time
+from random import shuffle, seed
 
 
 WIDTH, HEIGHT = (1600, 900) # ui window size in px
@@ -35,6 +35,7 @@ class Columns:
         ''' change value in self array by index '''
         self.array[index] = value
 
+
 class Window:
     """ Window class
     interacts with the user and displays the sorting process
@@ -43,7 +44,7 @@ class Window:
     COLUMN_COLOR = (0, 0, 0)
     CURRENT_COLUMN_COLOR = (200, 0, 0)
     
-    def __init__(self, random_seed: int, columns_count:int=100, tick:int=1) -> None:
+    def __init__(self, tick:int=1) -> None:
         self.tick = tick
 
         # window status variables
@@ -55,14 +56,12 @@ class Window:
         self.__screen = None
         self.__clock = None
 
-        # columns
-        self.columns_count = columns_count
-        self.columns = Columns(count=columns_count, random_seed=random_seed)
-
         # sorting information
-        self.swaps_count = 0 # count of swaps in array
         self.runtime = 0 # execution time (in ms)
         self._timer_start = 0 # timer start time (in ms)
+
+        self.sorting_is_done = True # true if the sorting is done completely
+        # (updated to False if the window was updated after it was closed)
 
     def __window_init(self) -> None:
         ''' window initialization '''
@@ -108,17 +107,21 @@ class Window:
                 if event.key == pygame.K_RIGHT or event.key == pygame.K_UP:
                     self.__make_step = True  # step
 
-    def draw(self, current_column_index: int) -> None:
+    def draw(self, columns: Columns, current_column_index: int) -> None:
         ''' columns draw '''
-        for i, column in enumerate(self.columns):
+        if columns == []: # if draw was called with empty list parametr
+            return
+        
+        columns_count = len(columns.array)
+        for i, column in enumerate(columns):
             # column parameters
             color = Window.COLUMN_COLOR if i != current_column_index else Window.CURRENT_COLUMN_COLOR
-            column_height = column * HEIGHT // self.columns.count
+            column_height = column * HEIGHT // columns_count
 
             # creating a column-sized rectangle
             rect = pygame.Rect(
-                (WIDTH * i / self.columns.count, HEIGHT - column_height),
-                (WIDTH / self.columns.count + 1, column_height)
+                (WIDTH * i / columns_count, HEIGHT - column_height),
+                (WIDTH / columns_count + 1, column_height)
             )
 
             # drawing rectangle on display and updating it
@@ -131,27 +134,26 @@ class Window:
         self.__make_step = keys[pygame.K_RIGHT] # right arrow is pressed
         self.__event_update()
 
-    def display_tick(self, current_column_index:int=-1) -> None:
+    def display_tick(self, columns_array, current_column_index:int=-1) -> None:
         ''' make one update tick '''
         # window tick limitation
         self.__clock.tick(self.tick)
 
         # ui draw
         self.__screen.fill(Window.SCREEN_COLOR)
-        self.draw(current_column_index)
+        self.draw(columns_array, current_column_index)
         
         # display update
         pygame.display.update()
 
-    def timer_update(self) -> None:
-        self.runtime = 0 # execution time (in ms)
-
-    def update(self, current_column_index:int=-1) -> None:
+    def update(self, columns_array, current_column_index:int=-1) -> None:
         ''' window update method '''
         # display and event update
         if self.running == False:
+            self.sorting_is_done = False # updated to False because the window was updated after it was closed
             return
-        self.display_tick(current_column_index)
+        
+        self.display_tick(columns_array, current_column_index)
         self.make_tick()
 
         # pause proccesing
@@ -164,25 +166,8 @@ class Window:
         self.running = True
         self.paused = True
         self.__make_step = False
-        self.swaps_count = 0
-
-        # columns shuffling
-        self.columns.shuffle()
+        self.sorting_is_done = True
 
         # window initialization
         self.__window_init()
-        self.display_tick()
-
-    def swap(self, index1: int, index2: int, update_window:bool=True) -> None:
-        ''' swaps elements in columns array with indexes index1 and index2 and update self window display if update_window is True'''
-
-        # updates window only if window is running
-        update_window and self.running and abs(index1 - index2) > 1 and self.update(index1) # marks a column only if it is not adjacent to another
-        self.columns.array[index1], self.columns.array[index2] = self.columns.array[index2], self.columns.array[index1]
-        update_window and self.running and self.update(index2)
-        self.swaps_count += 1
-
-    def swap_by_value(self, value1: int, value2: int) -> None:
-        ''' swaps elements in columns array with value value1 and value2 and updater self window '''
-
-        self.swap(self.columns.array.index(value1), self.columns.array.index(value2))
+        self.display_tick([])
