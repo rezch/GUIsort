@@ -4,9 +4,6 @@ from sort import Sort
 class GnomeSort(Sort):
     """ class of gnome sort algorithm """
 
-    def __str__(self):
-        return f"Gnome Sort, columns={self.columns_count}, tick={self.window.tick}"
-
     @Sort.show
     def show(self) -> None:
         current = 0
@@ -20,9 +17,6 @@ class GnomeSort(Sort):
 
 class BubbleSort(Sort):
     """ class of bubble sort algorithm """
-
-    def __str__(self):
-        return f"Bubble Sort, columns={self.columns_count}, tick={self.window.tick}"
 
     @Sort.show
     def show(self) -> None:
@@ -42,9 +36,6 @@ class BubbleSort(Sort):
 
 class CocktailSort(Sort):
     """ class of cocktail shaker sort algorithm """
-
-    def __str__(self):
-        return f"Cocktail Sort, columns={self.columns_count}, tick={self.window.tick}"
 
     def up_sort(self, left: int, right: int):
         ''' raising the biggest column to the top of an array of columns '''
@@ -80,9 +71,6 @@ class CocktailSort(Sort):
 class InsertionSort(Sort):
     """ class of insertion sort algorithm """
 
-    def __str__(self):
-        return f"Insertion Sort, columns={self.columns_count}, tick={self.window.tick}"
-
     @Sort.show
     def show(self) -> None:
         pivot = 1
@@ -95,9 +83,6 @@ class InsertionSort(Sort):
 
 class QuickSort(Sort):
     """ class of quick sort algorithm """
-
-    def __str__(self):
-        return f"Quick Sort, columns={self.columns_count}, tick={self.window.tick}"
 
     def subarray_sort(self, left: int, right: int) -> None:
         ''' sorting subarray '''
@@ -130,9 +115,6 @@ class QuickSort(Sort):
 class HeapSort(Sort):
     """ class of heap sort algorithm """
 
-    def __str__(self):
-        return f"Heap Sort, columns={self.columns_count}, tick={self.window.tick}"
-
     @Sort.show
     def show(self) -> None:
         # scan all columns
@@ -147,9 +129,6 @@ class HeapSort(Sort):
 class BucketSort(Sort):
     """ class of bucket sort algorithm """
 
-    def __str__(self):
-        return f"Bucket Sort, columns: {self.columns_count}, tick: {self.window.tick}"
-    
     def left_shift(self, left_index, pivot):
         # transposition columns smaller than pivot to the right
         current = left_index
@@ -205,7 +184,7 @@ class BucketSort(Sort):
 
 if __name__ == "__main__":
     sort = QuickSort(columns_count=100, tick=1000)
-    
+
     sort.show()
     
     print(sort.execucion_info())

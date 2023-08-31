@@ -19,6 +19,9 @@ class Sort:
         self.runtime = 0
         self.sorting_is_done = False # true if the sorting is done completely
 
+    def __str__(self):
+        return f"{self.__class__.__name__}, columns={self.columns_count}, tick={self.window.tick}"
+
     def action_await(self) -> None:
         ''' running self window until the user closed it '''
         self.window.paused = True # pausing the window to stop the timer of execution speed
